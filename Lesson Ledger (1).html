@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson Ledger</title>
+<style>
+  :root{
+    --ink:#20303F; --ink-soft:#5C6E7E; --paper:#F5F2EA; --card:#FFFFFF;
+    --line:#E1DBC8; --sage:#3F7A68; --sage-dk:#2C5A4C; --sage-lt:#E8F0EB;
+    --gold:#B07D2E; --gold-lt:#F6E9CC; --danger:#A5453A; --danger-lt:#F3E1DC;
+    --radius:12px; --shadow:0 1px 2px rgba(32,48,63,.05), 0 4px 14px rgba(32,48,63,.06);
+    padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#EDEAE1; --ink-soft:#AEB8C2; --paper:#141920; --card:#1D242D;
+      --line:#2C3540; --sage:#6FA593; --sage-dk:#8CC0AE; --sage-lt:#223028;
+      --gold:#D4A85B; --gold-lt:#332A18; --danger:#D97B6E; --danger-lt:#33221E;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#EDEAE1; --ink-soft:#AEB8C2; --paper:#141920; --card:#1D242D;
+    --line:#2C3540; --sage:#6FA593; --sage-dk:#8CC0AE; --sage-lt:#223028;
+    --gold:#D4A85B; --gold-lt:#332A18; --danger:#D97B6E; --danger-lt:#33221E;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top: env(safe-area-inset-top,0px); height:100%;}
+  body{
+    margin:0; min-height:100%; background:var(--paper); color:var(--ink);
+    font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    display:flex;
+  }
+  .sans{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  ::selection{ background:var(--sage-lt); color:var(--sage-dk); }
+
+  /* Sidebar */
+  nav.side{
+    width:212px; flex-shrink:0; background:var(--card); border-right:1px solid var(--line);
+    padding:0 0 24px; display:flex; flex-direction:column; gap:2px;
+  }
+  .brand{
+    padding:26px 20px 20px; margin-bottom:6px;
+    background-image: repeating-linear-gradient(var(--line) 0 1px, transparent 1px 26px);
+    background-position: 0 68px; border-bottom:1px solid var(--line);
+    padding-top: calc(26px + env(safe-area-inset-top,0px));
+  }
+  .brand h1{ font-size:1.3rem; margin:0; letter-spacing:.2px; color:var(--sage-dk); }
+  .brand h1 span{ color:var(--gold); }
+  .brand p{ margin:5px 0 0; font-size:.78rem; color:var(--ink-soft); font-family:inherit; }
+  nav.side button{
+    all:unset; cursor:pointer; padding:11px 20px; font-size:.95rem; color:var(--ink-soft);
+    border-left:3px solid transparent; font-family:inherit; display:flex; align-items:center; gap:9px;
+    transition:background .15s, color .15s;
+  }
+  nav.side button:hover{ background:var(--sage-lt); color:var(--ink); }
+  nav.side button.active{ color:var(--sage-dk); border-left-color:var(--sage); background:var(--sage-lt); font-weight:bold; }
+
+  main{ flex:1; min-width:0; padding:32px 36px 60px; max-width:940px; }
+  h2.pagehead{ font-size:1.6rem; margin:0 0 4px; letter-spacing:.1px; }
+  p.sub{ color:var(--ink-soft); margin:0 0 26px; font-size:.92rem; }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:28px; }
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-left:3px solid var(--sage);
+    border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);
+  }
+  .stat .n{ font-size:1.9rem; font-weight:bold; line-height:1.1; }
+  .stat .l{ font-size:.8rem; color:var(--ink-soft); margin-top:2px; }
+
+  section{ margin-bottom:32px; }
+  h3.sec{ font-size:1.04rem; margin:0 0 12px; padding-bottom:7px; border-bottom:1px solid var(--line); }
+
+  .row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:13px 17px; margin-bottom:9px; box-shadow:var(--shadow);
+    transition:transform .12s, box-shadow .12s;
+  }
+  .row:hover{ transform:translateY(-1px); box-shadow:0 2px 4px rgba(32,48,63,.07), 0 8px 20px rgba(32,48,63,.09); }
+  .row .main-txt{ font-size:.96rem; }
+  .row .meta{ font-size:.8rem; color:var(--ink-soft); margin-top:2px; }
+  .tag{ font-size:.72rem; padding:3px 9px; border-radius:20px; font-family:inherit; font-weight:bold; }
+  .tag.upcoming{ background:var(--sage-lt); color:var(--sage-dk); }
+  .tag.completed{ background:#E4E1D6; color:var(--ink-soft); }
+  .tag.cancelled{ background:var(--danger-lt); color:var(--danger); }
+  .tag.owing{ background:var(--gold-lt); color:var(--gold); }
+  .tag.paid{ background:var(--sage-lt); color:var(--sage-dk); }
+
+  button.btn{
+    font-family: inherit; cursor:pointer; border:1px solid var(--sage); background:var(--sage);
+    color:#fff; padding:10px 18px; border-radius:8px; font-size:.88rem; transition:background .12s, transform .1s;
+  }
+  button.btn:hover{ background:var(--sage-dk); border-color:var(--sage-dk); transform:translateY(-1px); }
+  button.btn:active{ transform:translateY(0); }
+  button.btn.ghost{ background:transparent; color:var(--sage-dk); }
+  button.btn.small{ padding:6px 12px; font-size:.78rem; }
+  button.btn.line{ background:transparent; color:var(--ink-soft); border-color:var(--line); }
+  button.btn.line:hover{ background:var(--paper); color:var(--ink); border-color:var(--ink-soft); }
+
+  form.panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; margin-bottom:22px; display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    box-shadow:var(--shadow); animation:reveal .18s ease-out;
+  }
+  @keyframes reveal{ from{ opacity:0; transform:translateY(-4px);} to{ opacity:1; transform:translateY(0);} }
+  form.panel .full{ grid-column:1/-1; }
+  form.panel label{ display:block; font-size:.78rem; color:var(--ink-soft); margin-bottom:4px; }
+  form.panel .hint{ font-size:.72rem; color:var(--gold); margin-top:3px; }
+  form.panel input, form.panel select, form.panel textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px;
+    background:var(--paper); color:var(--ink); font-family:inherit; font-size:.9rem;
+  }
+  form.panel input:focus, form.panel select:focus, form.panel textarea:focus{
+    outline:2px solid var(--sage); outline-offset:1px;
+  }
+  form.panel textarea{ resize:vertical; min-height:50px; }
+  form.panel .actions{ grid-column:1/-1; display:flex; gap:10px; justify-content:flex-end; }
+
+  .empty{ color:var(--ink-soft); font-size:.88rem; font-style:italic; padding:14px 0; }
+
+  .hero{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:16px;
+    margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid var(--line);
+  }
+  .hero .date{ font-size:.82rem; color:var(--ink-soft); text-align:right; }
+
+  .badge{
+    background:var(--gold); color:#fff; font-size:.68rem; font-weight:bold; border-radius:10px;
+    padding:1px 7px; margin-left:auto;
+  }
+  body.solo nav.side{ display:none; }
+  body.solo main{ max-width:600px; margin:0 auto; padding-top:60px; }
+  .center-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:34px 30px; box-shadow:var(--shadow); text-align:center;
+  }
+  .choice-btn{
+    all:unset; cursor:pointer; display:block; width:100%; text-align:left; padding:18px 20px;
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--card);
+    box-shadow:var(--shadow); margin-bottom:14px; transition:transform .12s;
+  }
+  .choice-btn:hover{ transform:translateY(-2px); border-color:var(--sage); }
+  .choice-btn .t{ font-size:1.05rem; font-weight:bold; color:var(--sage-dk); }
+  .choice-btn .d{ font-size:.85rem; color:var(--ink-soft); font-family:'-apple-system'; margin-top:2px; }
+  .share-box{
+    display:flex; gap:8px; align-items:center; background:var(--paper); border:1px dashed var(--line);
+    border-radius:8px; padding:10px 12px; font-size:.78rem; color:var(--ink-soft); word-break:break-all;
+  }
+
+  @media (max-width:720px){
+    body{ flex-direction:column; }
+    nav.side{ width:100%; flex-direction:row; overflow-x:auto; padding:0; border-right:none; border-bottom:1px solid var(--line); }
+    .brand{ display:none; }
+    nav.side button{ border-left:none; border-bottom:3px solid transparent; padding:12px 14px; white-space:nowrap; }
+    nav.side button.active{ border-bottom-color:var(--sage); border-left-color:transparent; }
+    main{ padding:22px 16px 50px; }
+    form.panel{ grid-template-columns:1fr; }
+    .hero{ flex-direction:column; align-items:flex-start; gap:4px; }
+  }
+</style>
+</head>
+<body class="sans">
+
+<nav class="side" id="sideNav">
+  <div class="brand">
+    <h1>Lesson<span> Ledger</span></h1>
+    <p>Your tutoring, organised</p>
+  </div>
+  <button data-view="dashboard" class="active"><span>🗂️</span> Dashboard</button>
+  <button data-view="requests"><span>📨</span> Requests <span id="reqBadge" class="badge" style="display:none;"></span></button>
+  <button data-view="students"><span>🎓</span> Students</button>
+  <button data-view="lessons"><span>📅</span> Lessons</button>
+  <button data-view="payments"><span>💰</span> Payments</button>
+  <div style="padding:14px 20px 0; margin-top:auto; display:flex; flex-direction:column; gap:8px;">
+    <button class="btn line small" id="shareLinkBtn" style="width:100%;">🔗 Copy booking link</button>
+    <button class="btn line small" id="changePinBtn" style="width:100%;">🔒 Change PIN</button>
+  </div>
+</nav>
+
+<main id="app"></main>
+
+<script>
+(function(){
+  "use strict";
+  const KEY = "lessonledger:data";
+  const ROLE_KEY = "lessonledger:role";
+  let data = { students: [], lessons: [], requests: [] };
+  let role = null;
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw) data = Object.assign({students:[],lessons:[],requests:[]}, JSON.parse(raw));
+      role = localStorage.getItem(ROLE_KEY);
+    }catch(e){ console.warn("Could not load saved data", e); }
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(data)); }
+    catch(e){ console.warn("Could not save data", e); }
+  }
+  function saveRole(r){ role=r; try{ localStorage.setItem(ROLE_KEY, r); }catch(e){} }
+  const PIN_KEY = "lessonledger:pin";
+  function getPin(){ try{ return localStorage.getItem(PIN_KEY) || "871101"; }catch(e){ return "871101"; } }
+  function setPin(p){ try{ localStorage.setItem(PIN_KEY, p); }catch(e){} }
+  const RATE = { "One-on-one": 200, "Group": 120 };
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+  function fmtMoney(n){ return "R " + (Number(n)||0).toFixed(2); }
+  function studentName(id){ const s = data.students.find(x=>x.id===id); return s ? s.name : "(unknown student)"; }
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function pendingRequests(){ return data.requests.filter(r=>r.status==="pending"); }
+
+  function baseUrl(){ return location.origin + location.pathname; }
+  function encodeReq(r){ return btoa(unescape(encodeURIComponent(JSON.stringify(r)))); }
+  function decodeReq(s){ return JSON.parse(decodeURIComponent(escape(atob(s)))); }
+
+  function importRequestFromHash(){
+    const m = location.hash.match(/req=([^&]+)/);
+    if(!m) return false;
+    try{
+      const req = decodeReq(decodeURIComponent(m[1]));
+      if(!data.requests.some(r=>r.id===req.id)){ data.requests.push(req); save(); }
+      saveRole("tutor");
+      history.replaceState(null, "", location.pathname);
+      return true;
+    }catch(e){ return false; }
+  }
+
+  let bookingSentLink = null;
+  let view = "dashboard";
+  let showStudentForm = false;
+  let showLessonForm = false;
+  let confirmingId = null;
+  let showPinPrompt = false;
+  let pinError = false;
+  let showPinChange = false;
+  let pinChangeMsg = "";
+
+  function setView(v){ view = v; showStudentForm=false; showLessonForm=false; render(); }
+
+  function upcomingSorted(){
+    return data.lessons.filter(l=>l.status==="upcoming")
+      .sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+  }
+
+  // ---------- Views ----------
+
+  function viewDashboard(){
+    const up = upcomingSorted();
+    const today = todayStr();
+    const todays = up.filter(l=>l.date===today);
+    const owingTotal = data.lessons
+      .filter(l=>l.status==="completed" && !l.paid)
+      .reduce((sum,l)=> sum + (Number(l.rate)||0), 0);
+
+    const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening";
+    let html = `<div class="hero">
+      <div><h2 class="pagehead">${greeting}, Elias</h2><p class="sub" style="margin-bottom:0;">A quick look at where things stand.</p></div>
+      <div class="date">${new Date().toLocaleDateString('en-ZA',{weekday:'long', day:'numeric', month:'long'})}</div>
+    </div>`;
+    html += `<div class="grid">
+      <div class="stat"><div class="n">${data.students.length}</div><div class="l">Active students</div></div>
+      <div class="stat"><div class="n">${todays.length}</div><div class="l">Lessons today</div></div>
+      <div class="stat"><div class="n">${up.length}</div><div class="l">Upcoming lessons</div></div>
+      <div class="stat"><div class="n">${fmtMoney(owingTotal)}</div><div class="l">Outstanding balance</div></div>
+    </div>`;
+
+    html += `<section><h3 class="sec">Today</h3>`;
+    html += todays.length ? todays.map(rowLesson).join("") : `<p class="empty">No lessons scheduled for today.</p>`;
+    html += `</section>`;
+
+    html += `<section><h3 class="sec">Coming up</h3>`;
+    const rest = up.filter(l=>l.date!==today).slice(0,6);
+    html += rest.length ? rest.map(rowLesson).join("") : `<p class="empty">Nothing else scheduled yet. Add a lesson to get started.</p>`;
+    html += `</section>`;
+
+    return html;
+  }
+
+  function rowLesson(l){
+    const s = studentName(l.studentId);
+    return `<div class="row">
+      <div>
+        <div class="main-txt">${esc(s)} — ${esc(l.subject||"Lesson")}</div>
+        <div class="meta">${esc(l.date)} at ${esc(l.time)} · ${esc(l.duration)} min · ${esc(l.type)}</div>
+      </div>
+      <span class="tag ${l.status}">${l.status}</span>
+    </div>`;
+  }
+
+  // ---------- Landing (first visit) ----------
+  function viewLanding(){
+    if(showPinPrompt){
+      return `<div class="center-card" style="text-align:left;">
+        <h2 class="pagehead" style="text-align:center;">Tutor login</h2>
+        <p class="sub" style="text-align:center;">Enter your PIN to open the dashboard.</p>
+        <form class="panel" id="pinForm" style="grid-template-columns:1fr;">
+          <div><label>PIN</label><input name="pin" type="password" inputmode="numeric" autofocus required></div>
+          ${pinError ? `<div class="full" style="color:var(--danger);font-size:.82rem;font-family:'-apple-system';">Incorrect PIN — try again.</div>` : ""}
+          <div class="actions">
+            <button type="button" class="btn line" id="pinBack">Back</button>
+            <button type="submit" class="btn">Unlock</button>
+          </div>
+        </form>
+      </div>`;
+    }
+    return `<div class="center-card" style="text-align:left;">
+      <h2 class="pagehead" style="text-align:center;">Welcome to Lesson Ledger</h2>
+      <p class="sub" style="text-align:center;">Who's opening this today?</p>
+      <button class="choice-btn" id="chooseStudent">
+        <div class="t">📚 I want to book a session</div>
+        <div class="d">Fill in a quick request for your tutor to confirm.</div>
+      </button>
+      <button class="choice-btn" id="chooseTutor">
+        <div class="t">🗂️ I'm the tutor</div>
+        <div class="d">Open the dashboard to manage students, lessons and payments.</div>
+      </button>
+    </div>`;
+  }
+
+  // ---------- Booking (student) ----------
+  function viewBooking(){
+    if(bookingSentLink){
+      return `<div class="center-card">
+        <h2 class="pagehead">Request ready to send ✅</h2>
+        <p class="sub">Send it to your tutor on WhatsApp or email — they'll confirm the price and time.</p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;">
+          <button class="btn" id="sendWhatsapp">Send via WhatsApp</button>
+          <button class="btn line" id="copyReqLink">Copy link instead</button>
+        </div>
+        <div class="share-box sans">${esc(bookingSentLink)}</div>
+        <p class="sub" style="margin-top:18px;"><button class="btn ghost" id="bookAnother">Book another session</button></p>
+      </div>`;
+    }
+    return `<div class="center-card" style="text-align:left;">
+      <h2 class="pagehead" style="text-align:center;">Request a session</h2>
+      <p class="sub" style="text-align:center;">Your tutor will set the price and confirm.</p>
+      <form class="panel" id="bookingForm" style="grid-template-columns:1fr;">
+        <div><label>Your full name</label><input name="name" required></div>
+        <div><label>Subject / course</label><input name="subject" required></div>
+        <div><label>Institution</label><input name="institution" placeholder="e.g. University of Limpopo"></div>
+        <div><label>Your contact (WhatsApp/email)</label><input name="contact" required></div>
+        <div><label>Preferred date</label><input name="date" type="date"></div>
+        <div><label>Preferred time</label><input name="time" type="time"></div>
+        <div class="full"><label>Anything your tutor should know?</label><textarea name="message" placeholder="Topics, group size, etc."></textarea></div>
+        <div class="actions"><button type="submit" class="btn">Send request</button></div>
+      </form>
+    </div>`;
+  }
+
+  // ---------- Requests (tutor) ----------
+  function viewRequests(){
+    const pend = pendingRequests();
+    let html = `<h2 class="pagehead">Requests</h2><p class="sub">Booking requests from students, waiting on you to set a price and confirm.</p>`;
+    html += `<section>`;
+    if(!pend.length){
+      html += `<p class="empty">No pending requests. Share your booking link so students can reach you.</p>`;
+    } else {
+      pend.forEach(r=>{
+        if(confirmingId===r.id){
+          html += `<form class="panel" id="confirmForm" data-req="${r.id}">
+            <div class="full main-txt sans" style="font-weight:bold;">${esc(r.name)} — ${esc(r.subject)}</div>
+            <div><label>Date</label><input name="date" type="date" required value="${r.date||todayStr()}"></div>
+            <div><label>Time</label><input name="time" type="time" required value="${r.time||''}"></div>
+            <div><label>Duration (minutes)</label><input name="duration" type="number" value="60" min="15" step="15"></div>
+            <div><label>Type</label>
+              <select name="type" id="confirmType"><option>One-on-one</option><option>Group</option></select>
+            </div>
+            <div class="full"><label>Price to charge (R)</label>
+              <input name="rate" id="confirmRate" type="number" min="0" step="0.01" value="${RATE['One-on-one']}">
+              <div class="hint">Suggested: R${RATE['One-on-one']} one-on-one · R${RATE['Group']} per student in a group</div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn line" id="cancelConfirm">Cancel</button>
+              <button type="submit" class="btn">Confirm & schedule</button>
+            </div>
+          </form>`;
+        } else {
+          html += `<div class="row">
+            <div>
+              <div class="main-txt">${esc(r.name)} — ${esc(r.subject)}</div>
+              <div class="meta">${esc(r.institution||"")}${r.institution?" · ":""}${esc(r.contact)} ${r.date?`· wants ${esc(r.date)} ${esc(r.time||"")}`:""}</div>
+              ${r.message?`<div class="meta" style="margin-top:4px;font-style:italic;">"${esc(r.message)}"</div>`:""}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn small" data-confirm-req="${r.id}">Set price & confirm</button>
+              <button class="btn small line" data-decline-req="${r.id}">Decline</button>
+            </div>
+          </div>`;
+        }
+      });
+    }
+    html += `</section>`;
+    return html;
+  }
+
+  // ---------- Change PIN (tutor) ----------
+  function viewChangePin(){
+    return `<h2 class="pagehead">Change your PIN</h2><p class="sub">This is the code needed for the tutor login.</p>
+      <form class="panel" id="pinChangeForm" style="grid-template-columns:1fr;max-width:380px;">
+        <div><label>Current PIN</label><input name="current" type="password" inputmode="numeric" required></div>
+        <div><label>New PIN</label><input name="next" type="password" inputmode="numeric" minlength="4" required></div>
+        <div><label>Confirm new PIN</label><input name="confirm" type="password" inputmode="numeric" minlength="4" required></div>
+        ${pinChangeMsg ? `<div class="full" style="font-size:.82rem;font-family:'-apple-system';color:${pinChangeMsg.startsWith('✓')?'var(--sage-dk)':'var(--danger)'};">${esc(pinChangeMsg)}</div>` : ""}
+        <div class="actions">
+          <button type="button" class="btn line" id="pinChangeCancel">Back</button>
+          <button type="submit" class="btn">Save new PIN</button>
+        </div>
+      </form>`;
+  }
+
+  function viewStudents(){
+    let html = `<h2 class="pagehead">Students</h2><p class="sub">Everyone you're currently tutoring.</p>`;
+    html += `<button class="btn" id="toggleStudentForm">${showStudentForm ? "Cancel" : "+ Add student"}</button>`;
+    if(showStudentForm){
+      html += `<form class="panel" id="studentForm" style="margin-top:14px;">
+        <div><label>Full name</label><input name="name" required></div>
+        <div><label>Subject / course</label><input name="subject" placeholder="e.g. Microsoft Access"></div>
+        <div><label>Institution</label><input name="institution" placeholder="e.g. University of Limpopo"></div>
+        <div><label>Contact (phone/email)</label><input name="contact"></div>
+        <div><label>Class type</label>
+          <select name="classType" id="studentClassType"><option value="One-on-one">One-on-one</option><option value="Group">Group</option></select>
+        </div>
+        <div><label>Default rate per session (R)</label>
+          <input name="rate" id="studentRate" type="number" min="0" step="0.01" value="${RATE["One-on-one"]}">
+          <div class="hint">Suggested: R${RATE["One-on-one"]} one-on-one · R${RATE["Group"]} per student in a group</div>
+        </div>
+        <div class="full"><label>Notes</label><textarea name="notes"></textarea></div>
+        <div class="actions"><button type="submit" class="btn">Save student</button></div>
+      </form>`;
+    }
+    html += `<section style="margin-top:20px;">`;
+    if(!data.students.length){
+      html += `<p class="empty">No students yet. Add your first one above.</p>`;
+    } else {
+      data.students.forEach(s=>{
+        const owed = data.lessons.filter(l=>l.studentId===s.id && l.status==="completed" && !l.paid)
+          .reduce((sum,l)=>sum+(Number(l.rate)||0),0);
+        html += `<div class="row">
+          <div>
+            <div class="main-txt">${esc(s.name)}${s.subject?" — "+esc(s.subject):""}</div>
+            <div class="meta">${esc(s.institution||"")} ${s.institution && s.contact ? "·" : ""} ${esc(s.contact||"")}${s.rate?` · ${fmtMoney(s.rate)}/session`:""}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${owed>0 ? `<span class="tag owing">${fmtMoney(owed)} owed</span>` : ""}
+            <button class="btn small line" data-del-student="${s.id}">Remove</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</section>`;
+    return html;
+  }
+
+  function viewLessons(){
+    let html = `<h2 class="pagehead">Lessons</h2><p class="sub">Book and track every session.</p>`;
+    if(!data.students.length){
+      html += `<p class="empty">Add a student first, then you can book lessons for them.</p>`;
+      return html;
+    }
+    html += `<button class="btn" id="toggleLessonForm">${showLessonForm ? "Cancel" : "+ Book lesson"}</button>`;
+    if(showLessonForm){
+      const options = data.students.map(s=>`<option value="${s.id}" data-rate="${s.rate||RATE[s.classType]||RATE["One-on-one"]}" data-type="${s.classType||"One-on-one"}">${esc(s.name)}</option>`).join("");
+      const firstRate = data.students[0] ? (data.students[0].rate || RATE[data.students[0].classType] || RATE["One-on-one"]) : RATE["One-on-one"];
+      html += `<form class="panel" id="lessonForm" style="margin-top:14px;">
+        <div><label>Student</label><select name="studentId" id="lessonStudent" required>${options}</select></div>
+        <div><label>Subject / topic</label><input name="subject"></div>
+        <div><label>Date</label><input name="date" type="date" required value="${todayStr()}"></div>
+        <div><label>Time</label><input name="time" type="time" required></div>
+        <div><label>Duration (minutes)</label><input name="duration" type="number" value="60" min="15" step="15"></div>
+        <div><label>Type</label>
+          <select name="type" id="lessonType"><option>One-on-one</option><option>Group</option></select>
+        </div>
+        <div><label>Rate charged (R)</label><input name="rate" id="lessonRate" type="number" min="0" step="0.01" value="${firstRate}"></div>
+        <div class="full"><label>Notes</label><textarea name="notes" placeholder="Topics to cover..."></textarea></div>
+        <div class="actions"><button type="submit" class="btn">Save lesson</button></div>
+      </form>`;
+    }
+    html += `<section style="margin-top:20px;">`;
+    if(!data.lessons.length){
+      html += `<p class="empty">No lessons booked yet.</p>`;
+    } else {
+      const sorted = [...data.lessons].sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+      sorted.forEach(l=>{
+        html += `<div class="row">
+          <div>
+            <div class="main-txt">${esc(studentName(l.studentId))} — ${esc(l.subject||"Lesson")}</div>
+            <div class="meta">${esc(l.date)} at ${esc(l.time)} · ${esc(l.duration)} min · ${esc(l.type)}${l.rate?` · ${fmtMoney(l.rate)}`:""}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="tag ${l.status}">${l.status}</span>
+            ${l.status==="upcoming" ? `<button class="btn small" data-complete="${l.id}">Mark done</button>
+              <button class="btn small line" data-cancel="${l.id}">Cancel</button>` : ""}
+            <button class="btn small line" data-del-lesson="${l.id}">Delete</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</section>`;
+    return html;
+  }
+
+  function viewPayments(){
+    let html = `<h2 class="pagehead">Payments</h2><p class="sub">Track what's been paid and what's still owing.</p>`;
+    const completed = data.lessons.filter(l=>l.status==="completed")
+      .sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+    const total = completed.reduce((s,l)=>s+(Number(l.rate)||0),0);
+    const owed = completed.filter(l=>!l.paid).reduce((s,l)=>s+(Number(l.rate)||0),0);
+    html += `<div class="grid">
+      <div class="stat"><div class="n">${fmtMoney(total)}</div><div class="l">Total billed</div></div>
+      <div class="stat"><div class="n">${fmtMoney(total-owed)}</div><div class="l">Received</div></div>
+      <div class="stat"><div class="n">${fmtMoney(owed)}</div><div class="l">Outstanding</div></div>
+    </div>`;
+    html += `<section>`;
+    if(!completed.length){
+      html += `<p class="empty">Completed lessons will show up here once you mark them done.</p>`;
+    } else {
+      completed.forEach(l=>{
+        html += `<div class="row">
+          <div>
+            <div class="main-txt">${esc(studentName(l.studentId))} — ${esc(l.subject||"Lesson")}</div>
+            <div class="meta">${esc(l.date)} · ${fmtMoney(l.rate)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="tag ${l.paid?'paid':'owing'}">${l.paid?'Paid':'Owing'}</span>
+            <button class="btn small ${l.paid?'line':''}" data-toggle-paid="${l.id}">${l.paid?'Mark unpaid':'Mark paid'}</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</section>`;
+    return html;
+  }
+
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function render(){
+    document.body.classList.toggle("solo", role!=="tutor");
+    document.querySelectorAll("nav.side button[data-view]").forEach(b=>{
+      b.classList.toggle("active", b.dataset.view===view);
+    });
+    const badge = document.getElementById("reqBadge");
+    if(badge){
+      const n = pendingRequests().length;
+      badge.style.display = n ? "inline-block" : "none";
+      badge.textContent = n;
+    }
+    const app = document.getElementById("app");
+    if(role!=="tutor"){
+      app.innerHTML = (role==="student") ? viewBooking() : viewLanding();
+    }
+    else if(showPinChange) app.innerHTML = viewChangePin();
+    else if(view==="dashboard") app.innerHTML = viewDashboard();
+    else if(view==="requests") app.innerHTML = viewRequests();
+    else if(view==="students") app.innerHTML = viewStudents();
+    else if(view==="lessons") app.innerHTML = viewLessons();
+    else if(view==="payments") app.innerHTML = viewPayments();
+    bindEvents();
+  }
+
+  function bindEvents(){
+    const chS = document.getElementById("chooseStudent");
+    if(chS) chS.onclick = ()=>{ saveRole("student"); render(); };
+    const chT = document.getElementById("chooseTutor");
+    if(chT) chT.onclick = ()=>{ showPinPrompt = true; pinError = false; render(); };
+    const pinBack = document.getElementById("pinBack");
+    if(pinBack) pinBack.onclick = ()=>{ showPinPrompt = false; pinError = false; render(); };
+    const pinForm = document.getElementById("pinForm");
+    if(pinForm) pinForm.onsubmit = (e)=>{
+      e.preventDefault();
+      const entered = new FormData(pinForm).get("pin").trim();
+      if(entered === getPin()){
+        showPinPrompt = false; pinError = false;
+        saveRole("tutor"); setView("dashboard");
+      } else {
+        pinError = true; render();
+      }
+    };
+
+    const cpBtn = document.getElementById("changePinBtn");
+    if(cpBtn) cpBtn.onclick = ()=>{ showPinChange = true; pinChangeMsg = ""; render(); };
+    const pcCancel = document.getElementById("pinChangeCancel");
+    if(pcCancel) pcCancel.onclick = ()=>{ showPinChange = false; pinChangeMsg = ""; render(); };
+    const pinChangeForm = document.getElementById("pinChangeForm");
+    if(pinChangeForm) pinChangeForm.onsubmit = (e)=>{
+      e.preventDefault();
+      const f = new FormData(pinChangeForm);
+      const current = f.get("current").trim(), next = f.get("next").trim(), confirm = f.get("confirm").trim();
+      if(current !== getPin()){ pinChangeMsg = "Current PIN is incorrect."; render(); return; }
+      if(next.length < 4){ pinChangeMsg = "New PIN must be at least 4 digits."; render(); return; }
+      if(next !== confirm){ pinChangeMsg = "New PIN and confirmation don't match."; render(); return; }
+      setPin(next);
+      pinChangeMsg = "✓ PIN updated.";
+      render();
+      setTimeout(()=>{ showPinChange=false; pinChangeMsg=""; render(); }, 1400);
+    };
+
+    const shareBtn = document.getElementById("shareLinkBtn");
+    if(shareBtn) shareBtn.onclick = ()=>{
+      navigator.clipboard?.writeText(baseUrl()+"#book").then(()=>{
+        shareBtn.textContent = "✓ Link copied!";
+        setTimeout(()=>{ shareBtn.textContent = "🔗 Copy booking link"; }, 1800);
+      }).catch(()=>{ alert(baseUrl()+"#book"); });
+    };
+
+    const bform = document.getElementById("bookingForm");
+    if(bform) bform.onsubmit = (e)=>{
+      e.preventDefault();
+      const f = new FormData(bform);
+      const req = {
+        id: uid(), name: f.get("name").trim(), subject: f.get("subject").trim(),
+        institution: f.get("institution").trim(), contact: f.get("contact").trim(),
+        date: f.get("date"), time: f.get("time"), message: f.get("message").trim(),
+        status:"pending", createdAt: Date.now()
+      };
+      const link = baseUrl() + "#req=" + encodeURIComponent(encodeReq(req));
+      bookingSentLink = link;
+      render();
+    };
+    const wa = document.getElementById("sendWhatsapp");
+    if(wa) wa.onclick = ()=>{
+      const text = `Hi! I'd like to book a tutoring session. Please open this link to confirm: ${bookingSentLink}`;
+      window.open("https://wa.me/?text="+encodeURIComponent(text), "_blank");
+    };
+    const cpl = document.getElementById("copyReqLink");
+    if(cpl) cpl.onclick = ()=>{
+      navigator.clipboard?.writeText(bookingSentLink).then(()=>{
+        cpl.textContent = "✓ Copied!"; setTimeout(()=>{ cpl.textContent="Copy link instead"; },1800);
+      }).catch(()=>{ alert(bookingSentLink); });
+    };
+    const ba = document.getElementById("bookAnother");
+    if(ba) ba.onclick = ()=>{ bookingSentLink=null; render(); };
+
+    document.querySelectorAll("[data-confirm-req]").forEach(b=>{
+      b.onclick = ()=>{ confirmingId = b.dataset.confirmReq; render(); };
+    });
+    document.querySelectorAll("[data-decline-req]").forEach(b=>{
+      b.onclick = ()=>{
+        data.requests = data.requests.filter(r=>r.id!==b.dataset.declineReq);
+        save(); render();
+      };
+    });
+    const cancelConfirm = document.getElementById("cancelConfirm");
+    if(cancelConfirm) cancelConfirm.onclick = ()=>{ confirmingId=null; render(); };
+    const cfType = document.getElementById("confirmType");
+    const cfRate = document.getElementById("confirmRate");
+    if(cfType && cfRate) cfType.onchange = ()=>{ cfRate.value = RATE[cfType.value]; };
+
+    const confirmForm = document.getElementById("confirmForm");
+    if(confirmForm) confirmForm.onsubmit = (e)=>{
+      e.preventDefault();
+      const reqId = confirmForm.dataset.req;
+      const req = data.requests.find(r=>r.id===reqId);
+      if(!req) return;
+      const f = new FormData(confirmForm);
+      let student = data.students.find(s=> s.contact && s.contact.toLowerCase()===req.contact.toLowerCase());
+      if(!student){
+        student = { id: uid(), name: req.name, subject: req.subject, institution: req.institution,
+          contact: req.contact, rate: f.get("rate")||0, classType: f.get("type"), notes: "" };
+        data.students.push(student);
+      }
+      data.lessons.push({
+        id: uid(), studentId: student.id, subject: req.subject, date: f.get("date"), time: f.get("time"),
+        duration: f.get("duration")||60, type: f.get("type"), rate: f.get("rate")||0, notes: req.message||"",
+        status:"upcoming", paid:false
+      });
+      data.requests = data.requests.filter(r=>r.id!==reqId);
+      confirmingId = null;
+      save(); setView("lessons");
+    };
+
+    const tsf = document.getElementById("toggleStudentForm");
+    if(tsf) tsf.onclick = ()=>{ showStudentForm = !showStudentForm; render(); };
+
+    const tlf = document.getElementById("toggleLessonForm");
+    if(tlf) tlf.onclick = ()=>{ showLessonForm = !showLessonForm; render(); };
+
+    const sClassType = document.getElementById("studentClassType");
+    const sRate = document.getElementById("studentRate");
+    if(sClassType && sRate) sClassType.onchange = ()=>{ sRate.value = RATE[sClassType.value]; };
+
+    const lStudent = document.getElementById("lessonStudent");
+    const lRate = document.getElementById("lessonRate");
+    const lType = document.getElementById("lessonType");
+    if(lStudent && lRate && lType){
+      lStudent.onchange = ()=>{
+        const opt = lStudent.options[lStudent.selectedIndex];
+        lRate.value = opt.dataset.rate;
+        lType.value = opt.dataset.type;
+      };
+    }
+
+    const sform = document.getElementById("studentForm");
+    if(sform) sform.onsubmit = (e)=>{
+      e.preventDefault();
+      const f = new FormData(sform);
+      data.students.push({
+        id: uid(), name: f.get("name").trim(), subject: f.get("subject").trim(),
+        institution: f.get("institution").trim(), contact: f.get("contact").trim(),
+        rate: f.get("rate") || 0, classType: f.get("classType"), notes: f.get("notes").trim()
+      });
+      save(); showStudentForm=false; render();
+    };
+
+    const lform = document.getElementById("lessonForm");
+    if(lform) lform.onsubmit = (e)=>{
+      e.preventDefault();
+      const f = new FormData(lform);
+      data.lessons.push({
+        id: uid(), studentId: f.get("studentId"), subject: f.get("subject").trim(),
+        date: f.get("date"), time: f.get("time"), duration: f.get("duration") || 60,
+        type: f.get("type"), rate: f.get("rate") || 0, notes: f.get("notes").trim(),
+        status: "upcoming", paid: false
+      });
+      save(); showLessonForm=false; render();
+    };
+
+    document.querySelectorAll("[data-del-student]").forEach(b=>{
+      b.onclick = ()=>{
+        const id = b.dataset.delStudent;
+        if(confirm("Remove this student and their lesson history?")){
+          data.students = data.students.filter(s=>s.id!==id);
+          data.lessons = data.lessons.filter(l=>l.studentId!==id);
+          save(); render();
+        }
+      };
+    });
+    document.querySelectorAll("[data-del-lesson]").forEach(b=>{
+      b.onclick = ()=>{
+        data.lessons = data.lessons.filter(l=>l.id!==b.dataset.delLesson);
+        save(); render();
+      };
+    });
+    document.querySelectorAll("[data-complete]").forEach(b=>{
+      b.onclick = ()=>{
+        const l = data.lessons.find(x=>x.id===b.dataset.complete);
+        if(l){ l.status="completed"; save(); render(); }
+      };
+    });
+    document.querySelectorAll("[data-cancel]").forEach(b=>{
+      b.onclick = ()=>{
+        const l = data.lessons.find(x=>x.id===b.dataset.cancel);
+        if(l){ l.status="cancelled"; save(); render(); }
+      };
+    });
+    document.querySelectorAll("[data-toggle-paid]").forEach(b=>{
+      b.onclick = ()=>{
+        const l = data.lessons.find(x=>x.id===b.dataset.togglePaid);
+        if(l){ l.paid = !l.paid; save(); render(); }
+      };
+    });
+  }
+
+  document.querySelectorAll("nav.side button[data-view]").forEach(b=>{
+    b.addEventListener("click", ()=> setView(b.dataset.view));
+  });
+
+  load();
+  const cameFromReq = importRequestFromHash();
+  if(cameFromReq){ view = "requests"; }
+  else if(location.hash.indexOf("book")>-1 && role!=="tutor"){ saveRole("student"); }
+  else if(!role){ view = "landing"; }
+  else if(role==="tutor"){ view = "dashboard"; }
+  render();
+})();
+</script>
+</body>
+</html>
